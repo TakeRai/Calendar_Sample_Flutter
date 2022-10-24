@@ -22,7 +22,7 @@ class AllRepository extends ChangeNotifier{
     true, 
     -1,
     49.5,
-    Todo(id: -1, title: "", comment: "", isAllday: false, startTime: DateTime.now(), endTime: DateTime.now())
+    Todo(id: -1, title: "", comment: "", isAllday: false, startTime: DateTime.now(), endTime: DateTime.now()),
     );
 
   void SelectFocusChange(DateTime dateTime){
@@ -256,7 +256,7 @@ class AllRepository extends ChangeNotifier{
       }
     }
 
-    final PageController controller = PageController(initialPage: here);
+    final PageController controller = PageController(initialPage: here,viewportFraction: 0.85);
     
     all.beforeIndex = here;
     
@@ -285,5 +285,10 @@ class AllRepository extends ChangeNotifier{
 
     notifyListeners();
   }
+
+  // void popBoolChange(bool bool){
+  //   all.popBool = bool;
+  //   notifyListeners();
+  // }
 }
 

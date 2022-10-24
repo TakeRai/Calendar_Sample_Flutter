@@ -18,7 +18,7 @@ class AllModel{
     this.isEdit,
     this.Id,
     this.beforeIndex,
-    this.defaultTodo
+    this.defaultTodo,
   );
 
   DateTime selected;
