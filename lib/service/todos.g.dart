@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of '../service/todos.dart';
+part of 'todos.dart';
 
 // **************************************************************************
 // MoorGenerator

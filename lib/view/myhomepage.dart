@@ -1,5 +1,5 @@
-import 'package:calender_sample/model/providers.dart';
-import 'package:calender_sample/routing/routing.dart';
+import 'package:calender_sample/common/common.dart';
+import 'package:calender_sample/main.dart';
 import 'package:calender_sample/service/todos.dart';
 import 'package:calender_sample/view/voids.dart';
 import 'package:calender_sample/view/add_edit_page.dart';
@@ -16,10 +16,10 @@ class MyHomePage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context,WidgetRef ref) {
-    final _focused = ref.watch(focusedProvider.state).state;
-     final _selected = ref.watch(selectedProvider.state).state;
-     
-     final db = ref.watch(calendarDBProvider);
+    final all = ref.watch(AllProvider);
+    final selected = all.all.selected;
+    final db = ref.watch(calendarDBProvider);
+    print(selected);
 
     return Scaffold(
       appBar: AppBar(
@@ -36,9 +36,9 @@ class MyHomePage extends ConsumerWidget {
           
           return TableCalendar<dynamic>(
           
-          firstDay: DateTime.utc(2000, 1, 1),
-          lastDay: DateTime.utc(2050, 12, 31),
-          focusedDay: _focused,
+          firstDay: Common().pickerStartTime,
+          lastDay: Common().pickerEndTime,
+          focusedDay: selected,
           startingDayOfWeek : StartingDayOfWeek.monday,
           daysOfWeekHeight: 40,
           rowHeight: 75,
@@ -65,29 +65,12 @@ class MyHomePage extends ConsumerWidget {
           },
           
           selectedDayPredicate: (day) {
-              return isSameDay(_selected, day);
+              return isSameDay(selected, day);
             },
           onDaySelected: (selectedDay, focusedDay) async {
-            ref.watch(selectedProvider.state).state = selectedDay;
-            ref.watch(focusedProvider.state).state = focusedDay;
-            String text = DateFormat.yMEd("ja").format(selectedDay);
-
-            WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-              // v.ShowStartDialog(text,snapshot,context,ref);
-              
-            // int diffCount = selectedDay.difference(DateTime(2000,1,1)).inDays;
-
-            final PageController controller = PageController(initialPage: 50);
-            List<DateTime> list = [];
-
-            for(var i=-50; i<50; i++){
-              list.add(selectedDay.add(Duration(days: i)));
-            }
-
-            int beforeIndex = 50;
-
-            ShowSchedule(context, beforeIndex, ref, controller, list, snapshot);
-          });
+            all.SelectFocusChange(selectedDay);
+            all.DaySelecte(selectedDay, context, ref, snapshot);
+            
           },
 
           calendarStyle: CalendarStyle(
@@ -133,36 +116,32 @@ class MyHomePage extends ConsumerWidget {
             dowBuilder:(context, day) {
               return Container(
                 height: 100,
-                // margin: EdgeInsets.only(bottom: 0),
                 padding: EdgeInsets.only(bottom: 0),
                 color: Color.fromARGB(255, 217, 217, 217),
                 child: ((){
 
                 if (day.weekday == DateTime.sunday) {
-                  final text = DateFormat.E("ja").format(day);
                   return Center(
                     child: Text(
-                    text,
+                    Common().E(day),
                     style: const TextStyle(color: Colors.red,fontSize: 12),
                   ),
                   );
                 }
 
               if (day.weekday == DateTime.saturday) {
-                  final text = DateFormat.E("ja").format(day);
                   return Center(
                     child: Text(
-                    text,
+                    Common().E(day),
                     style: const TextStyle(color: Colors.blue,fontSize: 12),
                   ),
                   );
                 }
 
-              final text = DateFormat.E("ja").format(day);
 
               return Center(
                     child: Text(
-                    text,
+                    Common().E(day),
                     style: const TextStyle(color: Colors.black, fontSize: 12),
                   ),
                   );
@@ -173,10 +152,7 @@ class MyHomePage extends ConsumerWidget {
 
             },
             headerTitleBuilder: (context, day) {
-              final text = DateFormat.yMMM("ja").format(day);
-
-              
-              
+              // final texta = Common().ymmm(day);
 
               return Container(
                 height:50,
@@ -189,15 +165,12 @@ class MyHomePage extends ConsumerWidget {
                           child: ElevatedButton(
                             child: Text("今日",style: TextStyle(color: Colors.black),),
                             onPressed: (){
-                              ref.watch(selectedProvider.state).state = DateTime.now();
-                              ref.watch(focusedProvider.state).state = DateTime.now();
-
+                              all.SelectFocusChange(DateTime.now());
                             },
                             
                             style: ElevatedButton.styleFrom(
                               primary: Colors.transparent,
                               elevation: 0,
-                              // onPrimary: Color.fromARGB(255, 255, 255, 255).withOpacity(0.1),
                               side: BorderSide(
                                 color: Color.fromARGB(255, 229, 229, 229),
                                 width: 1
@@ -220,21 +193,18 @@ class MyHomePage extends ConsumerWidget {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(text,style: TextStyle(fontSize: 20),),
+                            Text(Common().ymmm(day),style: TextStyle(fontSize: 20),),
                             GestureDetector(
                               onTap: (){
                                 showMonthPicker(
                                   context: context, 
-                                  firstDate: DateTime(2000,1,1),
-                                  lastDate: DateTime(2050,12,31),
-                                  initialDate:_selected,customHeight: 250).
+                                  firstDate: Common().pickerStartTime,
+                                  lastDate: Common().pickerEndTime,
+                                  initialDate:selected,customHeight: 250).
                                 then((date) {
                                   if(date != null){
-                                    int theday = _selected.day;
-                                    ref.watch(selectedProvider.state).state = DateTime(date.year,date.month,theday);
-                                    ref.watch(focusedProvider.state).state = DateTime(date.year,date.month,theday);
-
-
+                                    int theday = selected.day;
+                                    all.SelectFocusChange(DateTime(date.year,date.month,theday));
                                     
                                   }
 
@@ -264,7 +234,6 @@ class MyHomePage extends ConsumerWidget {
                       margin: const EdgeInsets.only(top: 60),
                       padding: const EdgeInsets.all(2),
                       child: Container(
-                        // height: 7,
                         width: 7,
                         decoration: BoxDecoration(
                             shape: BoxShape.circle,

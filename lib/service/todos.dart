@@ -5,7 +5,7 @@ import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
-part '../repository/todos.g.dart';
+part 'todos.g.dart';
 
 class Todos extends Table{
   IntColumn get id => integer().autoIncrement()();

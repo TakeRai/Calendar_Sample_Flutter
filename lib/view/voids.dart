@@ -1,9 +1,10 @@
-import 'package:calender_sample/model/providers.dart';
-import 'package:calender_sample/routing/routing.dart';
+import 'package:calender_sample/common/common.dart';
+import 'package:calender_sample/main.dart';
 import 'package:calender_sample/service/todos.dart';
 import 'package:calender_sample/view/add_edit_page.dart';
 // import 'package:drift/drift.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/cupertino.dart';
@@ -23,9 +24,11 @@ Future ShowDram(BuildContext context,Widget child)async{
   );
 }
 
+
+
 Future ShowSchedule(
   BuildContext context,
-  int beforeIndex,
+  // int beforeIndex,
   WidgetRef ref,
   PageController controller,
   List<DateTime> list,
@@ -33,26 +36,28 @@ Future ShowSchedule(
   )
   async {
   showDialog(context: context, builder: (context){
+    final all = ref.watch(AllProvider);
+    final selected = all.all.selected;
+    final beforeIndex = all.all.beforeIndex;
+
     return GestureDetector(
       onTap: (){
         Navigator.pop(context);
       },
       child: PageView.builder(
       onPageChanged: (index){
-
-        if(index > beforeIndex){
-            ref.watch(selectedProvider.state).state = ref.watch(selectedProvider).add(Duration(days: 1));
-            ref.watch(focusedProvider.state).state = ref.watch(selectedProvider).add(Duration(days: 1));
-        }else{
-            ref.watch(selectedProvider.state).state = ref.watch(selectedProvider).add(Duration(days: -1));
-            ref.watch(focusedProvider.state).state = ref.watch(selectedProvider).add(Duration(days: -1));
-        }
+        all.PageChange(index);
+        // if(index > beforeIndex){
+        //     all.SelectFocusChange(selected.add(Duration(days: 1)));
+        // }else{
+        //     all.SelectFocusChange(selected.add(Duration(days: -1)));
+        // }
         
-        beforeIndex = index;
+        // all.beforeIndexChange(index);
       },
       controller: controller,
       
-      itemCount: 101,
+      itemCount: 100,
       
       itemBuilder:(context, index) {
         return Center(
@@ -84,27 +89,14 @@ Future ShowSchedule(
                       
                       children: [
                         
-                        // Text(DateFormat.yMEd("ja").format(ref.watch(selectedProvider.state).state)),
-                        Text(DateFormat.yMEd("ja").format(list[index])),
+                        Text(Common().yMEd(list[index])),
 
                         TextButton(
                           onPressed: (){
-                            //以下は追加の時のみ
-                            var amari = DateTime.now().minute % 15;
-                            var minute = DateTime.now().minute - amari;
-                            
-                            
-                            DateTime dateTime = DateTime(ref.watch(selectedProvider.state).state.year,ref.watch(selectedProvider.state).state.month,ref.watch(selectedProvider.state).state.day,DateTime.now().hour,minute);
-                            ref.watch(startTimeProvider.state).state = dateTime;
-                            ref.watch(startTimeTextProvider.state).state = DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
-                            ref.watch(endTimeProvider.state).state = dateTime;
-                            ref.watch(endTimeTextProvider.state).state = DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
-                            
-                            
-                            ref.watch(isEditProvider.state).state = false;
-                            ref.watch(switchBoolProvider.state).state = false;
+                            //以下は追加の時
+                            all.GoAdd();
 
-                            GoAddEdit(context);
+                            GoRouter.of(context).push("/other");
                           }, 
                           child: Text("+",style: TextStyle(fontSize: 30),))
                       ],
@@ -174,8 +166,8 @@ Future ShowSchedule(
                                     return Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Text(DateFormat("HH:mm").format(list_here[index].startTime),style: TextStyle(fontSize: 12),),
-                                      Text(DateFormat("HH:mm").format(list_here[index].endTime),style: TextStyle(fontSize: 12),),
+                                      Text(Common().HM(list_here[index].startTime),style: TextStyle(fontSize: 12),),
+                                      Text(Common().HM(list_here[index].endTime),style: TextStyle(fontSize: 12),),
 
                                     ],
                                   );
@@ -191,28 +183,16 @@ Future ShowSchedule(
                                       width: 160,
                                       child: Text(
                                         list_here[index].title,
-                                        // "ああああああああああああ",
                                         style: TextStyle(fontSize: 18,color: Colors.black),
                                         
-                                        // textAlign: TextAlign.right,
                                         overflow: TextOverflow.ellipsis,
                                         ),
                                     ),
 
                                     onPressed: (){
-                                      ref.watch(isEditProvider.state).state = true;
-                                      ref.watch(IdProvider.state).state = list_here[index].id;
-                                      ref.watch(titleProvider.state).state.text = list_here[index].title;
-                                      ref.watch(commentProvider.state).state.text = list_here[index].comment;
-                                      ref.watch(startTimeProvider.state).state = list_here[index].startTime;
-                                      ref.watch(endTimeProvider.state).state = list_here[index].endTime;
-                                      ref.watch(switchBoolProvider.state).state = list_here[index].isAllday;
+                                      all.GoEdit(list_here[index]);
 
-                                      ref.watch(defaultProvider.state).state = list_here[index];
-
-                                      ref.watch(enableSaveProvider.state).state = false;
-
-                                      GoAddEdit(context);
+                                      context.push("/other");
                                     },
                                   )
                                 ),

@@ -1,9 +1,9 @@
+import 'package:calender_sample/common/common.dart';
 import 'package:calender_sample/main.dart';
-import 'package:calender_sample/model/providers.dart';
 import 'package:calender_sample/view/voids.dart' as v;
-import 'package:calender_sample/routing/routing.dart';
 import 'package:calender_sample/view/myhomepage.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/cupertino.dart';
@@ -13,47 +13,27 @@ class Add_Edit_Page extends ConsumerWidget{
 
   @override
   Widget build(BuildContext context,WidgetRef ref){
-    final switchBool = ref.watch(switchBoolProvider);
-    final selected = ref.watch(selectedProvider);
-    final startTimeText = ref.watch(startTimeTextProvider);
-    final startTime = ref.watch(startTimeProvider);
-    final endTimeText = ref.watch(endTimeTextProvider);
-    final endTime = ref.watch(endTimeProvider);
-    final title = ref.watch(titleProvider);
-    final comment = ref.watch(commentProvider);
-    final enableSave = ref.watch(enableSaveProvider);
-    final isEdit = ref.watch(isEditProvider);
-    final id = ref.watch(IdProvider);
-    final def = ref.watch(defaultProvider);
+    // final id = ref.watch(IdProvider);
+    // final def = ref.watch(defaultProvider);
     final db = ref.watch(calendarDBProvider);
 
+    final all = ref.watch(AllProvider);
+    final startTime = all.all.startTime;
+    final endTime = all.all.endTime;
+    final startTimeText = all.all.startTimeText;
+    final endTimeText = all.all.endTimeText;
+    final title = all.all.title;
+    final comment = all.all.comment;
+    final switchBool = all.all.switchBool;
+    final enableSave = all.all.enableSave;
+    final isEdit = all.all.isEdit;
+    final Id = all.all.Id;
+    final def = all.all.defaultTodo;
 
-
-
-    if(!switchBool){
-      WidgetsBinding.instance.addPostFrameCallback((_) => ref.watch(startTimeTextProvider.state).state = DateFormat('yyyy-MM-dd HH:mm').format(startTime));
-      WidgetsBinding.instance.addPostFrameCallback((_) => ref.watch(endTimeTextProvider.state).state = DateFormat('yyyy-MM-dd HH:mm').format(endTime));
-    }else{
-      WidgetsBinding.instance.addPostFrameCallback((_) => ref.watch(startTimeTextProvider.state).state = DateFormat('yyyy-MM-dd').format(startTime));
-      WidgetsBinding.instance.addPostFrameCallback((_) => ref.watch(endTimeTextProvider.state).state = DateFormat('yyyy-MM-dd').format(endTime));
-
-    }
-
-    // if(!isEdit){
-    if(comment.text != "" && title.text != ""){
-      if(isEdit){
-        if(comment.text != def.comment || title.text != def.title || switchBool != def.isAllday || startTime != def.startTime || endTime != def.endTime){
-          
-
-          WidgetsBinding.instance.addPostFrameCallback((_) => ref.watch(enableSaveProvider.state).state = true);
-          
-        }
-      }else{
-        WidgetsBinding.instance.addPostFrameCallback((_) => ref.watch(enableSaveProvider.state).state = true);
-      }
-    }else{
-      WidgetsBinding.instance.addPostFrameCallback((_) => ref.watch(enableSaveProvider.state).state = false);    
-    }
+    // if(enableSave){
+    //   print("no");
+    // }
+    
     String title_bar = isEdit ? "予定の編集" : "予定の追加";
     final bottomSpace = MediaQuery.of(context).viewInsets.bottom;
 
@@ -69,20 +49,16 @@ class Add_Edit_Page extends ConsumerWidget{
             
             child: TextButton(
             onPressed: !enableSave ? null : ()async{
-              // await db.addTodo(title.text, comment.text, switchBool, startTime, endTime);
               FocusScope.of(context).unfocus();
               await Future.delayed(Duration(milliseconds: 100));
               if(isEdit){
-                await db.updateTodo(id, title.text, comment.text, switchBool, startTime, endTime);
+                await db.updateTodo(Id, title.text, comment.text, switchBool, startTime, endTime);
               }else{
                 await db.addTodo(title.text, comment.text, switchBool, startTime, endTime);
               }
-
               
-              
-              ref.watch(commentProvider.state).state.text = "";
-              ref.watch(titleProvider.state).state.text = "";
-              GoMyApp(context);
+              all.AddEditReset();             
+              GoRouter.of(context).push("/");
             }, 
             
             child: Text(
@@ -106,10 +82,8 @@ class Add_Edit_Page extends ConsumerWidget{
                 actions: <Widget>[
                   CupertinoActionSheetAction(
                     onPressed: (){
-                      ref.watch(titleProvider.state).state = TextEditingController(text: "");
-                      ref.watch(commentProvider.state).state = TextEditingController(text: "");
-
-                     GoMyApp(context);
+                      all.AddEditReset();
+                     GoRouter.of(context).push("/");
                       
                     }, 
                     child: Text("編集を破棄")
@@ -152,7 +126,11 @@ class Add_Edit_Page extends ConsumerWidget{
                 
                 ),
               autofocus: true,
-              controller: title,
+              initialValue: title.text,
+              onChanged: (text){
+                all.TitleChange(text);
+                
+              },
               
             ),
             
@@ -170,7 +148,7 @@ class Add_Edit_Page extends ConsumerWidget{
                       children: [
                         Text("終日"),
                         Switch(value: switchBool, onChanged: (value){
-                         ref.watch(switchBoolProvider.state).state = value;
+                         all.SwitchChange(value);
                         })
                       ],
                     ),
@@ -193,37 +171,10 @@ class Add_Edit_Page extends ConsumerWidget{
                                 mode: switchBool ? CupertinoDatePickerMode.date : CupertinoDatePickerMode.dateAndTime,
                                 minuteInterval: 15,
                                 use24hFormat: true,
-                                // initialDateTime: DateTime(selected.year, selected.month, selected.day, DateTime.now().hour, (DateTime.now().minute % 15 * 15).toInt()),
                                 initialDateTime: startTime,
 
                                 onDateTimeChanged: (newDate){
-                                  // print(DateTime.now().hour);
-                                  
-
-                                  if(!switchBool){
-                                    ref.watch(startTimeProvider.state).state = newDate;
-                                    ref.watch(startTimeTextProvider.state).state = DateFormat('yyyy-MM-dd HH:mm').format(newDate);
-
-                                  }else{
-                                    DateTime addDate = DateTime(newDate.year,newDate.month,newDate.day,startTime.hour,startTime.minute);
-                                    ref.watch(startTimeProvider.state).state = addDate;
-                                    ref.watch(startTimeTextProvider.state).state = DateFormat('yyyy-MM-dd').format(addDate);
-
-                                  }
-
-                                  if(newDate.isAfter(endTime)){
-                                    DateTime updateDate = DateTime(newDate.year,newDate.month,newDate.day,newDate.hour + 1 ,newDate.minute);
-                                    if(!switchBool){
-                                    ref.watch(endTimeProvider.state).state = updateDate;
-                                    ref.watch(endTimeTextProvider.state).state = DateFormat('yyyy-MM-dd HH:mm').format(updateDate);
-
-                                    }else{
-                                      DateTime addDate = DateTime(newDate.year,newDate.month,newDate.day,endTime.hour,endTime.minute);
-                                      ref.watch(endTimeProvider.state).state = addDate;
-                                      ref.watch(endTimeTextProvider.state).state = DateFormat('yyyy-MM-dd').format(addDate);
-
-                                    }
-                                  }
+                                  all.StartDramDateTimeChange(newDate);
 
                                 },
 
@@ -254,25 +205,10 @@ class Add_Edit_Page extends ConsumerWidget{
                                 mode: switchBool ? CupertinoDatePickerMode.date : CupertinoDatePickerMode.dateAndTime,
                                 minuteInterval: 15,
                                 use24hFormat: true,
-                              //  initialDateTime: DateTime(selected.year, selected.month, selected.day, DateTime.now().hour, (DateTime.now().minute % 15 * 15).toInt()),
                                 initialDateTime: endTime,
 
                                 onDateTimeChanged: (newDate){
-                                  
-
-                                   if(!switchBool){
-                                    ref.watch(endTimeProvider.state).state = newDate;
-                                    ref.watch(endTimeTextProvider.state).state = DateFormat('yyyy-MM-dd HH:mm').format(newDate);
-
-                                  }else{
-                                    DateTime addDate = DateTime(newDate.year,newDate.month,newDate.day,endTime.hour,endTime.minute);
-                                    ref.watch(endTimeProvider.state).state = addDate;
-                                    ref.watch(endTimeTextProvider.state).state = DateFormat('yyyy-MM-dd').format(addDate);
-
-                                  }
-
-                                  
-
+                                  all.EndDramDateTimeChange(newDate);
                                 },
 
 
@@ -309,7 +245,11 @@ class Add_Edit_Page extends ConsumerWidget{
                   ),
                 autofocus: true,
                 maxLines: 7,
-                controller: comment,
+                initialValue: comment.text,
+                // controller: comment,
+                onChanged:(value) {
+                  all.CommentChange(value);
+                },
                 
               ),
             
@@ -339,11 +279,9 @@ class Add_Edit_Page extends ConsumerWidget{
                               CupertinoDialogAction(
                                 isDestructiveAction: true,
                                 onPressed: () {
-                                  ref.watch(titleProvider.state).state = TextEditingController(text: "");
-                                  ref.watch(commentProvider.state).state = TextEditingController(text: "");
-                                  db.deleteTodo(id);
-
-                                  GoMyApp(context);
+                                  all.AddEditReset();
+                                  db.deleteTodo(Id);
+                                  GoRouter.of(context).push("/");
                                 },
                                 child: const Text('削除',style: TextStyle(color: Colors.blue),),
                               )
